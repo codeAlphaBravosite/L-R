@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shadow Practice</title>
+<link rel="manifest" id="manifestLink">
+<meta name="theme-color" content="#14171C">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shadow">
+<link rel="apple-touch-icon" id="touchIcon">
+<link rel="icon" id="faviconIcon">
+<style>
+  :root{
+    --bg:#14171C; --surface:#1B1F26; --surface-2:#20242C;
+    --text:#EDEFF3; --muted:#8B93A3; --hairline:#262B34;
+    --accent:#E8A33D; --accent-ink:#1A1400;
+    --good:#6FBF8B; --danger:#E2635B;
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-serif:ui-serif,Georgia,"Iowan Old Style","Palatino Linotype",serif;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-tap-highlight-color:transparent; -webkit-text-size-adjust:100%;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--font-ui);
+    -webkit-font-smoothing:antialiased; min-height:100%;
+    display:flex; flex-direction:column;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  button{font-family:inherit; color:inherit; touch-action:manipulation; -webkit-user-select:none; user-select:none;}
+  svg{display:block; pointer-events:none;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
+  header{
+    padding:14px 20px; padding-top:calc(14px + env(safe-area-inset-top,0px));
+    position:sticky; top:0; background:var(--bg); z-index:5;
+    border-bottom:1px solid var(--hairline); flex-shrink:0;
+    display:flex; align-items:flex-start; gap:10px; min-height:24px;
+  }
+  header h1{
+    font-size:16px; font-weight:600; margin:2px 0 0; letter-spacing:-0.01em;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; line-height:1.35;
+  }
+  .back{
+    background:none; border:none; color:var(--muted); font-size:14px;
+    padding:2px 4px 0 0; cursor:pointer; flex-shrink:0;
+  }
+  .back:active{opacity:0.6;}
+
+  main{max-width:520px; margin:0 auto; padding:20px; width:100%; flex:1; display:flex; flex-direction:column;}
+  main > section{flex:1; display:flex; flex-direction:column;}
+  .center-block{margin:auto 0; width:100%;}          /* centers when there's room, top-aligns (never clips) when there isn't */
+  .empty-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px 0;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--accent); color:var(--accent-ink); border:none; border-radius:14px;
+    padding:15px 18px; font-size:15px; font-weight:600; cursor:pointer; width:100%;
+    transition:transform 100ms ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn.secondary{background:var(--surface); color:var(--text); border:1px solid var(--hairline);}
+  .btn:disabled{background:var(--surface); color:var(--muted); border:1px solid var(--hairline); cursor:default; transform:none;}
+  :is(.btn,.back,.row-open,.row-del,.seg button,.restart-btn,.rp-btn,.rp-icon,.side,.main):focus-visible,
+  .pick:focus-within{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* library */
+  #libraryList{flex:1; display:flex; flex-direction:column; margin-top:22px;}
+  .lib-row{display:flex; align-items:stretch; border-bottom:1px solid var(--hairline);}
+  .row-open{
+    flex:1; min-width:0; text-align:left; background:none; border:none; color:var(--text);
+    padding:16px 2px; cursor:pointer;
+  }
+  .row-open:active{background:var(--surface);}
+  .row-open h3{margin:0 0 5px; font-size:15px; font-weight:600; line-height:1.35;}
+  .row-open p{margin:0 0 8px; color:var(--muted); font-size:13px;}
+  .row-open p.done-tag{color:var(--good);}
+  .row-track{height:3px; background:var(--hairline); border-radius:2px; overflow:hidden; width:100%; max-width:220px;}
+  .row-track > div{height:100%; background:var(--good);}
+  .row-del{background:none; border:none; color:var(--muted); font-size:13px; padding:0 8px 0 14px; cursor:pointer; flex-shrink:0;}
+  .row-del:active{color:var(--danger);}
+  .empty{color:var(--muted); text-align:center; font-size:14px; line-height:1.6; max-width:260px;}
+  .empty strong{display:block; color:var(--text); font-size:16px; font-weight:600; margin-bottom:8px;}
+
+  /* import */
+  .pick{
+    position:relative; display:block; width:100%; text-align:left; background:var(--surface);
+    border:1px solid var(--hairline); border-radius:12px; padding:14px 16px;
+    margin-bottom:12px; cursor:pointer; color:var(--text);
+  }
+  .pick .label{font-size:12px; color:var(--muted); margin-bottom:3px;}
+  .pick .value{font-size:14px; word-break:break-word;}
+  .pick input{position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;}
+  .row{display:flex; gap:10px;}
+  .row .btn{flex:1;}
+  .msg{font-size:13px; white-space:pre-wrap; margin-top:12px; line-height:1.5; word-break:break-word;}
+  #importErrors{color:var(--danger);} #importWarn{color:var(--accent);} #importOk{color:var(--good);}
+
+  /* practice */
+  .waveform{
+    display:flex; align-items:flex-end; gap:2px; height:44px; margin-bottom:28px;
+    overflow-x:auto; scrollbar-width:none; cursor:pointer;
+  }
+  .waveform::-webkit-scrollbar{display:none;}
+  .tick{flex:1 1 0; min-width:2px; background:var(--hairline); border-radius:1px;}
+  .tick.done{background:var(--good); opacity:0.5;}
+  .tick.current{background:var(--accent);}
+
+  .hero{
+    font-family:var(--font-serif); font-size:25px; line-height:1.5; text-align:center;
+    padding:8px 4px 24px; min-height:110px; display:flex; align-items:center; justify-content:center;
+    overflow-wrap:anywhere;
+  }
+  .pos{text-align:center; color:var(--muted); font-size:13px; margin-bottom:6px;}
+  .timing-row{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;}
+  #chunkTiming{font-size:11px; color:var(--muted); opacity:0.8; font-variant-numeric:tabular-nums;}
+  .restart-btn{
+    background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer;
+    padding:4px 8px; display:inline-flex; align-items:center; gap:5px; border-radius:8px;
+  }
+  .restart-btn:active{color:var(--text);}
+
+  .transport{display:flex; align-items:center; justify-content:center; gap:22px; margin-bottom:24px;}
+  .side{
+    width:54px; height:54px; border-radius:50%; background:var(--surface);
+    border:1px solid var(--hairline); color:var(--text);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:transform 100ms ease;
+  }
+  .side:active{transform:scale(0.93);}
+  .side:disabled{opacity:0.3;}
+  .main{
+    width:78px; height:78px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+    border:none; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:transform 100ms ease;
+  }
+  .main:active{transform:scale(0.94);}
+
+  .seg{display:flex; background:var(--surface); border:1px solid var(--hairline); border-radius:11px; padding:3px; margin-bottom:20px;}
+  .seg button{
+    flex:1; background:none; border:none; color:var(--muted); font-size:13px; font-weight:600;
+    padding:10px 4px; border-radius:8px; cursor:pointer;
+  }
+  .seg button.active{background:var(--accent); color:var(--accent-ink);}
+
+  #playbackStatus{display:none; font-size:13px; text-align:center; line-height:1.5; margin-bottom:12px;}
+
+  .record-panel{background:var(--surface); border:1px solid var(--hairline); border-radius:14px; padding:14px 16px;}
+  .rp-label{font-size:12px; color:var(--muted); margin-bottom:10px;}
+  .rp-controls{display:flex; gap:10px; align-items:center;}
+  .rp-btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--surface-2); border:1px solid var(--hairline); color:var(--text);
+    border-radius:10px; padding:12px; font-size:14px; font-weight:600; cursor:pointer;
+    font-variant-numeric:tabular-nums;
+  }
+  .rp-btn:active{transform:scale(0.98);}
+  .rp-btn.recording{background:var(--danger); color:#2a0a08; border-color:var(--danger);}
+  .rp-icon{
+    width:44px; height:44px; border-radius:50%; background:var(--surface-2); border:1px solid var(--hairline);
+    color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .rp-icon:active{transform:scale(0.92);}
+  .rp-note{color:var(--muted); font-size:12px; line-height:1.5;}
+
+  /* short phones (e.g. 360x640, iPhone SE): tighten vertical rhythm so the whole practice view fits without scrolling */
+  @media (max-height:720px){
+    main{padding-top:12px; padding-bottom:12px;}
+    .waveform{height:36px; margin-bottom:14px;}
+    .hero{font-size:22px; min-height:0; padding:4px 4px 12px;}
+    .timing-row{margin-bottom:12px;}
+    .transport{margin-bottom:14px; gap:20px;}
+    .side{width:50px; height:50px;}
+    .main{width:68px; height:68px;}
+    .seg{margin-bottom:12px;}
+    .record-panel{padding:10px 14px;}
+    .rp-label{margin-bottom:8px;}
+  }
+
+  #toast{
+    position:fixed; left:50%; bottom:calc(22px + env(safe-area-inset-bottom,0px));
+    transform:translate(-50%,8px); background:var(--surface-2); border:1px solid var(--hairline);
+    color:var(--text); padding:10px 16px; border-radius:12px; font-size:13px; max-width:90%;
+    opacity:0; pointer-events:none; transition:opacity 150ms ease, transform 150ms ease; z-index:20; text-align:center;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+  #toast.err{border-color:var(--danger); color:var(--danger);}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<header id="appHeader">
+  <button class="back hidden" id="backToLibraryBtn">&larr; Library</button>
+  <h1 id="headerTitle">Shadow Practice</h1>
+</header>
+
+<main>
+
+  <section id="libraryView">
+    <button class="btn" id="showImportBtn">Add audio to practice</button>
+    <div id="libraryList"></div>
+  </section>
+
+  <section id="importView" class="hidden">
+    <div class="center-block">
+      <label class="pick">
+        <div class="label">Session JSON (from Phase 1)</div>
+        <div class="value" id="jsonFileLabel">Choose file</div>
+        <input type="file" id="jsonInput" accept="application/json,.json">
+      </label>
+      <label class="pick">
+        <div class="label">Matching audio file</div>
+        <div class="value" id="audioFileLabel">Choose file</div>
+        <input type="file" id="audioInput" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac">
+      </label>
+      <div class="row" style="margin-top:6px;">
+        <button class="btn secondary" id="cancelImportBtn">Cancel</button>
+        <button class="btn" id="confirmImportBtn" disabled>Import</button>
+      </div>
+      <div class="msg" id="importErrors" role="alert"></div>
+      <div class="msg" id="importWarn"></div>
+      <div class="msg" id="importOk"></div>
+    </div>
+  </section>
+
+  <section id="practiceView" class="hidden">
+    <div class="center-block">
+      <div class="waveform" id="waveform" role="img" aria-label="Session progress"></div>
+      <div class="hero" id="chunkText">&mdash;</div>
+      <div class="pos" id="chunkPos">chunk 0 of 0</div>
+      <div class="timing-row">
+        <span id="chunkTiming"></span>
+        <button class="restart-btn" id="restartBtn" aria-label="Replay this chunk from the beginning"><span id="restartIcon"></span>Replay</button>
+      </div>
+
+      <div class="transport">
+        <button class="side" id="prevBtn" aria-label="Previous chunk"></button>
+        <button class="main" id="playPauseBtn" aria-label="Play"></button>
+        <button class="side" id="nextBtn" aria-label="Next chunk"></button>
+      </div>
+
+      <div class="seg" id="speedSegmented" role="group" aria-label="Playback speed">
+        <button data-rate="0.6">0.6x</button>
+        <button data-rate="0.75">0.75x</button>
+        <button data-rate="1" class="active">1x</button>
+        <button data-rate="1.15">1.15x</button>
+      </div>
+
+      <div id="playbackStatus" role="status" aria-live="polite"></div>
+
+      <div class="record-panel" id="recordPanel">
+        <div class="rp-label">Your voice &middot; optional, practice works the same without it</div>
+        <div class="rp-controls" id="rpControls"></div>
+        <div class="rp-note hidden" id="rpUnsupported">Voice recording isn't available in this browser or page. Listen-and-repeat practice works normally.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<audio id="audioEl" preload="auto"></audio>
+<audio id="recordingAudioEl" preload="auto"></audio>
+
+<script>
+(function () {
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+
+// ============================================================
+// Icons (inline SVG: consistent on every platform, no emoji glyph substitution)
+// ============================================================
+const ICONS = {
+  play:   '<path d="M8 5v14l11-7z"/>',
+  pause:  '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
+  prev:   '<path d="M6 6h2v12H6zM9.5 12l8.5 6V6z"/>',
+  next:   '<path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/>',
+  replay: '<path d="M12 5V2L7 6.5 12 11V8a6 6 0 1 1-6 6H4a8 8 0 1 0 8-9z"/>',
+  mic:    '<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.9A7 7 0 0 0 19 11z"/>',
+  stop:   '<path d="M6 6h12v12H6z"/>',
+  trash:  '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z"/>',
+  check:  '<path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>'
+};
+const icon = (name, size) => `<svg viewBox="0 0 24 24" width="${size||24}" height="${size||24}" fill="currentColor" aria-hidden="true">${ICONS[name]}</svg>`;
+
+// ============================================================
+// App icon + manifest, generated inline so the app is one file
+// ============================================================
+const ICON_192 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAD8ElEQVR4nO3dPW7bQBSFUUrIEgy4SZM+y8sysrz0adwY8B6cIrDhH0nmcIYcDu85tSUR8Pv4KMmST9PO3N1/f+59DKzn6fHh1PsY3up6MIadaeobxeYPbOi5ZesYNnswg0+JrUJY/UEMPjXWDmG1Ozf4tLRWCM3v1OCzptYhnFvemeFnba1nrElNBp8eWmyD6g1g+OmlxexVBWD46a12BhcHYPjZi5pZXBSA4Wdvls5kcQCGn71aMptFARh+9q50RmcHYPgZRcmszgrA8DOauTP7ZQCGn1HNmd2mfwoBo7kZgLM/o/tqhq8GYPg5iluz7BKIaBcDcPbnaK7NtA1AtE8BOPtzVJdm2wYg2rsAnP05uo8zbgMQ7TUAZ39SvJ11G4BoAiDaeZpc/pDnZeZtAKIJgGgCIJoAiHbyBJhkNgDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANG+9T4ALvvz+0fRz//89XelIzk2G2CHSod/6W0QwO7UDLIIygmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGgCIJoAiCYAogmAaAIgmgCIJgCiCYBoAiCaAIgmAKL5WpQCvqrkeGyAmXxVyTEJYAZfVXJcAiCaAIgmAKIJgGgCIJoAiOaNMKLf4LMBwqW/wSeAYN7gEwDhBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANGG/0xw8udZqTf0Bkj/PCv1hg3A51lpYdgAoAUBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBNAEQTANEEQDQBEE0ARBMA0QRANAEQTQBEEwDRBEA0ARBt2ABq/tld6W09Vtvb7smwAUzTsl/C0l+cx6p/rD063d1/f+59ENDL0BsAagmAaAIgmgCIJgCiCYBoAiCaAIgmAKIJgGjnp8eHU++DgB6eHh9ONgDRBEA0ARBNAEQ7T9P/JwO9DwS29DLzNgDRBEC01wBcBpHi7azbAER7F4AtwNF9nHEbgGifArAFOKpLs20DEO1iALYAR3Ntpm0Aol0NwBbgKG7N8s0NIAJG99UMuwQi2pcB2AKMas7sztoAImA0c2d29iWQCBhFyawWPQcQAXtXOqPFT4JFwF4tmc1FrwKJgL1ZOpOLXwYVAXtRM4tV7wOIgN5qZ7D6jTAR0EuL2Ws6vP7lKltoedJt+qcQtgFraz1jqw2sbUBLa51cVz9jC4Eaa19VbHbJIgRKbHU5vfk1uxC4ZevnkV2ftIqBaer74snuXrURxbHt7ZXCf81tCYfuc75sAAAAAElFTkSuQmCC";
+const ICON_512 = "data:image/png;base64,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";
+$('touchIcon').href = ICON_192;
+$('faviconIcon').href = ICON_192;
+try {
+  const manifest = {
+    name: "Shadow Practice", short_name: "Shadow", start_url: "./", scope: "./",
+    display: "standalone", background_color: "#14171C", theme_color: "#14171C",
+    icons: [
+      { src: ICON_192, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: ICON_512, sizes: "512x512", type: "image/png", purpose: "any" }
+    ]
+  };
+  $('manifestLink').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+} catch (e) { /* manifest is optional */ }
+
+// ============================================================
+// Small utilities
+// ============================================================
+function escapeHtml(str) { const d = document.createElement('div'); d.textContent = String(str); return d.innerHTML; }
+function fmtClock(sec) { sec = Math.max(0, sec || 0); const m = Math.floor(sec / 60); const s = Math.floor(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; }
+function fmtPrecise(sec) { const m = Math.floor(sec / 60); const s = (sec % 60).toFixed(2); return `${m}:${s.padStart(5, '0')}`; }
+
+let toastTimer = null;
+function toast(msg, isErr) {
+  const t = $('toast'); t.textContent = msg; t.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, isErr ? 5000 : 2800);
+}
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
+
+// ============================================================
+// IndexedDB (one shared connection, promise-wrapped transactions)
+// ============================================================
+const DB_NAME = 'shadowPracticeDB';
+const DB_VERSION = 2;
+let dbPromise = null;
+
+function openDB() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('sessions')) db.createObjectStore('sessions', { keyPath: 'session_id' });
+      if (!db.objectStoreNames.contains('progress')) db.createObjectStore('progress', { keyPath: 'session_id' });
+      if (!db.objectStoreNames.contains('recordings')) db.createObjectStore('recordings', { keyPath: 'key' });
+    };
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      resolve(db);
+    };
+    req.onerror = () => { dbPromise = null; reject(req.error); };
+  });
+  return dbPromise;
+}
+async function withStore(store, mode, fn) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(store, mode);
+    let result;
+    const req = fn(t.objectStore(store));
+    if (req) req.onsuccess = () => { result = req.result; };
+    t.oncomplete = () => resolve(result);
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error('Transaction aborted'));
+  });
+}
+const idbPut = (s, v) => withStore(s, 'readwrite', (st) => st.put(v));
+const idbGet = (s, k) => withStore(s, 'readonly', (st) => st.get(k)).then((r) => r || null);
+const idbGetAll = (s) => withStore(s, 'readonly', (st) => st.getAll()).then((r) => r || []);
+const idbDelete = (s, k) => withStore(s, 'readwrite', (st) => st.delete(k));
+const idbDeleteByPrefix = (s, prefix) => withStore(s, 'readwrite', (st) => st.delete(IDBKeyRange.bound(prefix, prefix + '\uffff')));
+
+// ============================================================
+// Session validation (mirrors the Phase 1 validator, plus type checks)
+// ============================================================
+const LONG_GAP_SEC = 6;
+
+function validateSession(json) {
+  const errors = [];
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return { ok: false, errors: ['this file is not a session object'] };
+  for (const key of ['session_id', 'title', 'source_audio', 'source_duration_sec', 'chunks']) {
+    if (!(key in json)) errors.push(`missing required field '${key}'`);
+  }
+  if (errors.length) return { ok: false, errors };
+  if (typeof json.session_id !== 'string' || !json.session_id.trim()) errors.push('session_id must be a non-empty string');
+  if (typeof json.source_duration_sec !== 'number' || !isFinite(json.source_duration_sec) || json.source_duration_sec <= 0) errors.push('source_duration_sec must be a positive number');
+  if (!Array.isArray(json.chunks) || json.chunks.length === 0) errors.push('chunks must be a non-empty array');
+  if (errors.length) return { ok: false, errors };
+
+  const seenIds = new Set();
+  let prevEnd = 0, totalCovered = 0, maxEnd = 0;
+  const longGaps = [];
+  json.chunks.forEach((c, i) => {
+    if (!c || typeof c !== 'object') { errors.push(`chunk at position ${i} is not an object`); return; }
+    if (c.id == null || c.index == null) { errors.push(`chunk at position ${i} is missing id/index`); return; }
+    if (typeof c.start !== 'number' || typeof c.end !== 'number' || !isFinite(c.start) || !isFinite(c.end)) {
+      errors.push(`chunk '${c.id}' needs numeric start and end`); return;
+    }
+    if (seenIds.has(c.id)) errors.push(`duplicate chunk id '${c.id}'`);
+    seenIds.add(c.id);
+    if (c.index !== i + 1) errors.push(`chunk '${c.id}' has index ${c.index}, expected ${i + 1}`);
+    if (typeof c.text !== 'string' || !c.text.trim()) errors.push(`chunk '${c.id}' has empty text`);
+    if (c.start < 0) errors.push(`chunk '${c.id}' starts before 0`);
+    const dur = c.end - c.start;
+    if (dur <= 0) { errors.push(`chunk '${c.id}' has non-positive duration`); return; }
+    if (c.start < prevEnd - 0.01) errors.push(`chunk '${c.id}' overlaps the previous chunk`);
+    if (i > 0 && c.start - prevEnd > LONG_GAP_SEC) longGaps.push({ at: prevEnd, len: c.start - prevEnd });
+    prevEnd = c.end; totalCovered += dur; maxEnd = Math.max(maxEnd, c.end);
+  });
+  if (json.chunks[0] && typeof json.chunks[0].start === 'number' && json.chunks[0].start > LONG_GAP_SEC) longGaps.push({ at: 0, len: json.chunks[0].start });
+  if (json.source_duration_sec - prevEnd > LONG_GAP_SEC) longGaps.push({ at: prevEnd, len: json.source_duration_sec - prevEnd });
+  if (maxEnd > json.source_duration_sec + 1.5) errors.push(`last chunk ends at ${maxEnd.toFixed(2)}s, past the session's stated length`);
+  return { ok: errors.length === 0, errors, coveragePct: (totalCovered / json.source_duration_sec) * 100, longGaps, maxEnd };
+}
+
+// Reads the audio's real length through the browser itself, so a wrong or unreadable audio file is caught at import.
+function probeAudio(file) {
+  return new Promise((resolve) => {
+    const a = new Audio();
+    a.preload = 'metadata';
+    const url = URL.createObjectURL(file);
+    let settled = false;
+    const done = (v) => {
+      if (settled) return; settled = true; clearTimeout(timer);
+      a.onloadedmetadata = a.onerror = null; a.removeAttribute('src'); try { a.load(); } catch (e) { /* ignore */ }
+      URL.revokeObjectURL(url); resolve(v);
+    };
+    const timer = setTimeout(() => done({ duration: NaN, failed: false }), 8000);   // some mobile browsers defer loading: don't block on it
+    a.onloadedmetadata = () => done({ duration: a.duration, failed: false });
+    a.onerror = () => done({ duration: NaN, failed: true });
+    a.src = url;
+  });
+}
+
+// ============================================================
+// State + views
+// ============================================================
+let currentSession = null;
+let currentProgress = null;
+let audioUrl = null;
+const audioEl = $('audioEl');
+const recordingAudioEl = $('recordingAudioEl');
+
+function getSelectedRate() { const b = document.querySelector('#speedSegmented button.active'); return b ? parseFloat(b.dataset.rate) : 1; }
+function setPlaybackRate(rate) {
+  audioEl.playbackRate = rate;
+  audioEl.preservesPitch = true; audioEl.mozPreservesPitch = true; audioEl.webkitPreservesPitch = true;
+}
+function currentChunk() { return currentSession.chunks[currentProgress.current_chunk_index]; }
+function currentView() { return ['libraryView', 'importView', 'practiceView'].find((v) => !$(v).classList.contains('hidden')); }
+function showView(id) { ['libraryView', 'importView', 'practiceView'].forEach((v) => $(v).classList.toggle('hidden', v !== id)); window.scrollTo(0, 0); }
+
+// ============================================================
+// Library
+// ============================================================
+let libraryToken = 0;
+async function renderLibrary() {
+  const token = ++libraryToken;
+  let sessions, progresses;
+  try { [sessions, progresses] = await Promise.all([idbGetAll('sessions'), idbGetAll('progress')]); }
+  catch (e) { toast("Couldn't open your saved sessions. Storage may be blocked in this browser.", true); return; }
+  if (token !== libraryToken) return;
+  const list = $('libraryList');
+  if (sessions.length === 0) {
+    list.innerHTML = `<div class="empty-wrap"><div class="empty"><strong>No sessions yet</strong>Add an audio file and its session JSON from Phase 1 to start practicing.</div></div>`;
+    return;
+  }
+  const progMap = Object.fromEntries(progresses.map((p) => [p.session_id, p]));
+  sessions.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+  list.innerHTML = '';
+  for (const s of sessions) {
+    const total = s.chunks.length;
+    const done = Math.min(total, (progMap[s.session_id]?.completed_ids || []).length);
+    const complete = done >= total;
+    const row = document.createElement('div');
+    row.className = 'lib-row';
+    row.innerHTML = `
+      <button class="row-open" type="button">
+        <h3>${escapeHtml(s.title)}</h3>
+        <p class="${complete ? 'done-tag' : ''}">${complete ? 'Completed \u00b7 ' + total + ' chunks' : total + ' chunks \u00b7 ' + done + '/' + total + ' done'}</p>
+        <div class="row-track"><div style="width:${Math.round((done / total) * 100)}%"></div></div>
+      </button>
+      <button class="row-del" type="button" aria-label="Delete ${escapeHtml(s.title)}">Delete</button>`;
+    row.querySelector('.row-open').addEventListener('click', () => openPractice(s.session_id));
+    row.querySelector('.row-del').addEventListener('click', async () => {
+      if (!confirm(`Delete "${s.title}" and your recordings for it? This can't be undone.`)) return;
+      try {
+        await idbDelete('sessions', s.session_id);
+        await idbDelete('progress', s.session_id);
+        await idbDeleteByPrefix('recordings', s.session_id + '::');
+        toast('Session deleted');
+      } catch (e) { toast("Couldn't delete that session.", true); }
+      renderLibrary();
+    });
+    list.appendChild(row);
+  }
+}
+
+// ============================================================
+// Import
+// ============================================================
+let importToken = 0, pendingJson = null, pendingAudioFile = null;
+
+function resetImportForm() {
+  importToken++; pendingJson = null; pendingAudioFile = null;
+  $('jsonInput').value = ''; $('audioInput').value = '';
+  $('jsonFileLabel').textContent = 'Choose file'; $('audioFileLabel').textContent = 'Choose file';
+  $('importErrors').textContent = ''; $('importWarn').textContent = ''; $('importOk').textContent = '';
+  $('confirmImportBtn').disabled = true;
+}
+
+async function checkImportReady() {
+  const token = ++importToken;
+  const errBox = $('importErrors'), warnBox = $('importWarn'), okBox = $('importOk'), btn = $('confirmImportBtn');
+  errBox.textContent = ''; warnBox.textContent = ''; okBox.textContent = '';
+  btn.disabled = true; pendingJson = null; pendingAudioFile = null;
+
+  const jsonFile = $('jsonInput').files[0], audioFile = $('audioInput').files[0];
+  $('jsonFileLabel').textContent = jsonFile ? jsonFile.name : 'Choose file';
+  $('audioFileLabel').textContent = audioFile ? audioFile.name : 'Choose file';
+  if (!jsonFile || !audioFile) return;
+
+  let parsed;
+  try { parsed = JSON.parse(await jsonFile.text()); }
+  catch (e) { if (token === importToken) errBox.textContent = 'Could not read the JSON file: ' + e.message; return; }
+  if (token !== importToken) return;
+
+  const result = validateSession(parsed);
+  if (!result.ok) {
+    const more = result.errors.length > 8 ? `\n\u2026and ${result.errors.length - 8} more` : '';
+    errBox.textContent = 'This session failed validation and cannot be imported:\n' + result.errors.slice(0, 8).join('\n') + more;
+    return;
+  }
+
+  okBox.textContent = 'Checking the audio file\u2026';
+  const probe = await probeAudio(audioFile);
+  if (token !== importToken) return;
+  okBox.textContent = '';
+  if (probe.failed) { errBox.textContent = "This browser can't read that audio file. Try an MP3 or M4A."; return; }
+
+  const warnings = [];
+  if (!isNaN(probe.duration)) {
+    if (result.maxEnd > probe.duration + 0.5) {
+      errBox.textContent = `This audio is only ${fmtClock(probe.duration)} long, but the session uses audio up to ${fmtClock(result.maxEnd)}. This is probably the wrong audio file.`;
+      return;
+    }
+    if (Math.abs(probe.duration - parsed.source_duration_sec) > 3) {
+      warnings.push(`The audio is ${fmtClock(probe.duration)} long but the session expects ${fmtClock(parsed.source_duration_sec)}. Double-check you picked the matching audio.`);
+    }
+  } else {
+    warnings.push("Couldn't verify the audio length in this browser, so the pairing wasn't checked.");
+  }
+  const jsonBase = jsonFile.name.replace(/\.json$/i, ''), audioBase = audioFile.name.replace(/\.[^.]+$/, '');
+  if (jsonBase !== audioBase) warnings.push(`File names differ ("${jsonFile.name}" / "${audioFile.name}"). Make sure they're a pair.`);
+  if (result.longGaps.length) {
+    const g = result.longGaps.slice().sort((a, b) => b.len - a.len)[0];
+    warnings.push(`${result.longGaps.length} long stretch${result.longGaps.length > 1 ? 'es' : ''} of audio have no chunks (longest: ${fmtClock(g.len)} at ${fmtClock(g.at)}). If speech is there, re-run Phase 1.`);
+  }
+  let existing = null;
+  try { existing = await idbGet('sessions', parsed.session_id); } catch (e) { /* ignore */ }
+  if (token !== importToken) return;
+  if (existing) warnings.push(`"${existing.title}" already exists with this ID. Importing updates its audio and text; your progress and recordings are kept.`);
+
+  pendingJson = parsed; pendingAudioFile = audioFile;
+  okBox.textContent = `Looks good \u2014 ${parsed.chunks.length} chunks, ${result.coveragePct.toFixed(0)}% of the audio covered.`;
+  warnBox.textContent = warnings.join('\n\n');
+  btn.disabled = false;
+}
+
+$('showImportBtn').addEventListener('click', () => { resetImportForm(); history.pushState({ view: 'import' }, ''); showView('importView'); });
+$('cancelImportBtn').addEventListener('click', () => goLibrary());
+$('jsonInput').addEventListener('change', checkImportReady);
+$('audioInput').addEventListener('change', checkImportReady);
+
+$('confirmImportBtn').addEventListener('click', async () => {
+  if (!pendingJson || !pendingAudioFile) return;
+  const btn = $('confirmImportBtn'); btn.disabled = true;
+  try {
+    await idbPut('sessions', { ...pendingJson, audioBlob: pendingAudioFile, addedAt: Date.now() });
+    if (!(await idbGet('progress', pendingJson.session_id))) {
+      await idbPut('progress', { session_id: pendingJson.session_id, current_chunk_index: 0, completed_ids: [], last_opened: Date.now() });
+    }
+  } catch (e) {
+    let hint = '';
+    try { const est = await navigator.storage.estimate(); hint = ` (using ${Math.round(est.usage / 1048576)} MB of ${Math.round(est.quota / 1048576)} MB)`; } catch (_) { /* ignore */ }
+    $('importErrors').textContent = "Couldn't save this session. Your browser's storage may be full" + hint + '.';
+    btn.disabled = false; return;
+  }
+  toast('Session imported');
+  goLibrary();
+});
+
+// ============================================================
+// Playback engine
+//
+// States: 'stopped' | 'playing' | 'paused'.
+//  - stopped -> tap = start the chunk from its beginning
+//  - playing -> tap = pause in place
+//  - paused  -> tap = resume from the exact same position (no re-seek)
+// Rules learned the hard way:
+//  * always seek BEFORE play() so no audio from the old position is heard
+//  * never "correct" the position repeatedly: playback legitimately moves forward
+//  * if metadata isn't loaded yet (some mobile browsers defer it), play muted
+//    inside the tap, seek when ready, and only unmute after the seek lands
+//  * rAF stops in background tabs, so timeupdate + visibilitychange back it up
+// ============================================================
+let playState = 'stopped';
+let playToken = 0;
+let rafId = null;
+let awaitingSeek = false;
+let unmuteTimer = null;
+
+let boundaryTimer = null;
+function stopBoundaryWatch() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (boundaryTimer) { clearTimeout(boundaryTimer); boundaryTimer = null; }
+}
+function showPlaybackStatus(msg, isError) {
+  const el = $('playbackStatus');
+  el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none';
+  el.style.color = isError ? 'var(--danger)' : 'var(--muted)';
+}
+function updateTransportUI() {
+  const b = $('playPauseBtn');
+  b.innerHTML = icon(playState === 'playing' ? 'pause' : 'play', 34);
+  b.setAttribute('aria-label', playState === 'playing' ? 'Pause' : (playState === 'paused' ? 'Resume' : 'Play'));
+}
+function setState(s) { playState = s; updateTransportUI(); syncMediaSession(); }
+
+function haltAudio() {
+  playToken++; awaitingSeek = false; clearTimeout(unmuteTimer);
+  stopBoundaryWatch(); audioEl.pause(); audioEl.muted = false;
+}
+function fullStop() { haltAudio(); setState('stopped'); }
+function finishChunk() { stopBoundaryWatch(); audioEl.pause(); setState('stopped'); }
+
+function tryPlay() {
+  const p = audioEl.play();
+  if (p && p.catch) p.catch((err) => {
+    if (err && err.name === 'AbortError') return;                         // superseded by a newer action: not an error
+    haltAudio(); setState('stopped');
+    showPlaybackStatus(err && err.name === 'NotAllowedError'
+      ? "Playback was blocked. Check this site's sound permission, then tap play."
+      : `Couldn't start playback (${err && err.message ? err.message : 'unknown error'}). Tap play again.`, true);
+  });
+}
+
+function watchBoundary(chunk, token) {
+  stopBoundaryWatch();
+  const live = () => token === playToken && playState === 'playing';
+  // Primary: a timer that sleeps until just before the predicted end, then polls tightly.
+  // Timers aren't tied to display frames, so a busy or low-power screen can't make a chunk run long.
+  const step = () => {
+    boundaryTimer = null;
+    if (!live()) return;
+    if (awaitingSeek) { boundaryTimer = setTimeout(step, 30); return; }
+    const remaining = chunk.end - audioEl.currentTime;
+    if (remaining <= 0) { finishChunk(); return; }
+    const wait = (remaining / Math.max(0.25, audioEl.playbackRate)) * 1000;
+    boundaryTimer = setTimeout(step, wait > 70 ? wait - 45 : 2);
+  };
+  step();
+  // Backup: an independent frame-based check (covers anything odd about timers).
+  const tick = () => {
+    if (!live()) return;
+    if (!awaitingSeek && audioEl.currentTime >= chunk.end) { finishChunk(); return; }
+    rafId = requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+function startChunkFromBeginning() {
+  const chunk = currentChunk();
+  showPlaybackStatus('');
+  recordingAudioEl.pause();
+  haltAudio();
+  const token = playToken;
+
+  if (audioEl.readyState >= 1) {
+    audioEl.currentTime = chunk.start;                                    // seek first...
+    tryPlay();                                                            // ...then play
+    // one-shot sanity check the moment audio really starts (no repeated re-seeking!)
+    audioEl.addEventListener('playing', () => {
+      if (token !== playToken) return;
+      const t = audioEl.currentTime;
+      if (t < chunk.start - 0.05 || t > chunk.start + 0.5) audioEl.currentTime = chunk.start;
+    }, { once: true });
+  } else {
+    awaitingSeek = true; audioEl.muted = true;                            // metadata not ready: stay silent until positioned
+    tryPlay();
+    const seekNow = () => { if (token === playToken) audioEl.currentTime = chunk.start; };
+    audioEl.addEventListener('loadedmetadata', seekNow, { once: true });
+    unmuteTimer = setTimeout(() => { if (token === playToken) { awaitingSeek = false; audioEl.muted = false; } }, 2500);
+  }
+  setState('playing');
+  watchBoundary(chunk, token);
+}
+
+function resumePlayback() {
+  const chunk = currentChunk();
+  const t = audioEl.currentTime;
+  if (t < chunk.start - 0.3 || t > chunk.end + 0.1) { startChunkFromBeginning(); return; }   // position isn't inside this chunk: start clean
+  showPlaybackStatus(''); recordingAudioEl.pause();
+  playToken++; const token = playToken;
+  tryPlay();
+  setState('playing');
+  watchBoundary(chunk, token);
+}
+
+function pausePlayback() {
+  playToken++; stopBoundaryWatch(); audioEl.pause();
+  setState('paused');
+}
+
+function togglePlayPause() {
+  if (!currentSession) return;
+  if (playState === 'playing') pausePlayback();
+  else if (playState === 'paused') resumePlayback();
+  else startChunkFromBeginning();
+}
+
+// the moment a seek lands while we're waiting to unmute
+audioEl.addEventListener('seeked', () => {
+  if (awaitingSeek && currentSession && Math.abs(audioEl.currentTime - currentChunk().start) < 0.5) {
+    awaitingSeek = false; clearTimeout(unmuteTimer); audioEl.muted = false;
+  }
+});
+// safety nets
+audioEl.addEventListener('timeupdate', () => {                             // fires in background tabs where rAF doesn't
+  if (playState === 'playing' && !awaitingSeek && currentSession && audioEl.currentTime >= currentChunk().end + 0.02) finishChunk();
+});
+audioEl.addEventListener('ended', () => { stopBoundaryWatch(); if (playState !== 'stopped') setState('stopped'); });
+audioEl.addEventListener('pause', () => {                                  // paused by the OS: call, headphones unplugged, lock-screen control
+  if (playState === 'playing' && audioEl.paused) { playToken++; stopBoundaryWatch(); setState('paused'); }
+});
+audioEl.addEventListener('error', () => {
+  const codes = { 1: 'loading was aborted', 2: 'a network error occurred', 3: 'the audio could not be decoded', 4: "this audio format isn't supported by this browser" };
+  const e = audioEl.error;
+  if (!currentSession || !audioEl.getAttribute('src')) return;
+  fullStop();
+  showPlaybackStatus(`Couldn't load this audio: ${e ? (codes[e.code] || 'error ' + e.code) : 'unknown error'}. Try re-importing this session.`, true);
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (playState === 'playing') pausePlayback();
+    if (rec) stopRecordingIfActive(false);
+  } else if (currentView() === 'practiceView') requestWake();
+});
+
+$('playPauseBtn').addEventListener('click', togglePlayPause);
+$('restartBtn').addEventListener('click', () => { if (currentSession) startChunkFromBeginning(); });
+document.querySelectorAll('#speedSegmented button').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#speedSegmented button').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    setPlaybackRate(parseFloat(btn.dataset.rate));
+    lsSet('shadow.speed', btn.dataset.rate);
+  });
+});
+
+// ============================================================
+// Practice: rendering + navigation
+// ============================================================
+function renderWaveform() {
+  const container = $('waveform');
+  const chunks = currentSession.chunks;
+  const durations = chunks.map((c) => c.end - c.start);
+  const maxDur = Math.max(...durations), minDur = Math.min(...durations);
+  const span = Math.max(0.001, maxDur - minDur);
+  const completed = new Set(currentProgress.completed_ids);
+  const frag = document.createDocumentFragment();
+  chunks.forEach((c, i) => {
+    const tick = document.createElement('div');
+    tick.className = 'tick' + (i === currentProgress.current_chunk_index ? ' current' : (completed.has(c.id) ? ' done' : ''));
+    tick.style.height = `${28 + ((durations[i] - minDur) / span) * 72}%`;
+    frag.appendChild(tick);
+  });
+  container.innerHTML = ''; container.appendChild(frag);
+  container.setAttribute('aria-label', `${completed.size} of ${chunks.length} chunks done`);
+}
+
+function renderChunk() {
+  const idx = currentProgress.current_chunk_index, total = currentSession.chunks.length;
+  const chunk = currentSession.chunks[idx];
+  const done = currentProgress.completed_ids.length;
+  $('chunkText').textContent = chunk.text;
+  $('chunkPos').textContent = done >= total ? `chunk ${idx + 1} of ${total} \u00b7 all done` : `chunk ${idx + 1} of ${total} \u00b7 ${done} done`;
+  $('chunkTiming').textContent = `${fmtPrecise(chunk.start)} \u2013 ${fmtPrecise(chunk.end)}`;
+  renderWaveform();
+  $('prevBtn').disabled = idx === 0;
+  $('nextBtn').innerHTML = idx === total - 1 ? icon('check', 26) : icon('next', 26);
+  $('nextBtn').setAttribute('aria-label', idx === total - 1 ? 'Finish' : 'Next chunk');
+  updateTransportUI();
+  refreshRecordingUI();
+  syncMediaSession();
+}
+
+async function saveProgress() {
+  currentProgress.last_opened = Date.now();
+  try { await idbPut('progress', currentProgress); }
+  catch (e) { toast("Couldn't save your progress (storage may be full).", true); }
+}
+
+function leaveChunk() {                       // everything that must stop before the current chunk changes
+  fullStop();
+  recordingAudioEl.pause();
+  stopRecordingIfActive(false);               // never lose a take by navigating: it's saved to the chunk it was recorded on
+}
+async function goToChunk(newIdx, markCurrentDone) {
+  leaveChunk();
+  if (markCurrentDone) {
+    const id = currentChunk().id;
+    if (!currentProgress.completed_ids.includes(id)) currentProgress.completed_ids.push(id);
+  }
+  currentProgress.current_chunk_index = Math.max(0, Math.min(currentSession.chunks.length - 1, newIdx));
+  renderChunk();
+  await saveProgress();
+  if (markCurrentDone && currentProgress.completed_ids.length >= currentSession.chunks.length) toast('Session complete');
+}
+const goNext = () => { if (currentSession) goToChunk(currentProgress.current_chunk_index + 1, true); };
+const goPrev = () => { if (currentSession && currentProgress.current_chunk_index > 0) goToChunk(currentProgress.current_chunk_index - 1, false); };
+$('nextBtn').addEventListener('click', goNext);
+$('prevBtn').addEventListener('click', goPrev);
+
+// tap the progress strip to jump to any chunk
+$('waveform').addEventListener('click', (e) => {
+  if (!currentSession) return;
+  const ticks = $('waveform').children;
+  let best = -1, bestDist = Infinity;
+  for (let i = 0; i < ticks.length; i++) {
+    const r = ticks[i].getBoundingClientRect();
+    const d = Math.abs(e.clientX - (r.left + r.width / 2));
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  if (best >= 0 && best !== currentProgress.current_chunk_index) goToChunk(best, false);
+});
+
+async function openPractice(sessionId) {
+  let session, progress;
+  try { session = await idbGet('sessions', sessionId); progress = await idbGet('progress', sessionId); }
+  catch (e) { toast("Couldn't open that session.", true); return; }
+  if (!session) { toast("That session couldn't be found.", true); renderLibrary(); return; }
+  progress = progress || { session_id: sessionId, current_chunk_index: 0, completed_ids: [], last_opened: Date.now() };
+  if (progress.current_chunk_index >= session.chunks.length || progress.current_chunk_index < 0) progress.current_chunk_index = 0;
+  if (progress.completed_ids.length >= session.chunks.length && confirm('You finished this session. Start over from chunk 1?')) {
+    progress.completed_ids = []; progress.current_chunk_index = 0;
+    try { await idbPut('progress', progress); } catch (e) { /* ignore */ }
+  }
+
+  fullStop();
+  currentSession = session; currentProgress = progress;
+  if (audioUrl) URL.revokeObjectURL(audioUrl);
+  audioUrl = URL.createObjectURL(session.audioBlob);
+  audioEl.src = audioUrl; audioEl.load();
+  setPlaybackRate(getSelectedRate());
+  showPlaybackStatus('');
+
+  history.pushState({ view: 'practice' }, '');
+  showView('practiceView');
+  $('backToLibraryBtn').classList.remove('hidden');
+  $('headerTitle').textContent = session.title;
+  renderChunk();
+  requestWake();
+}
+
+function goLibrary() {
+  // route through history so the browser/Android back button and the in-app buttons behave identically
+  if (history.state && history.state.view && history.state.view !== 'library') history.back();
+  else showLibraryUI();
+}
+function showLibraryUI() {
+  if (currentView() === 'practiceView') { leaveChunk(); releaseWake(); }
+  $('backToLibraryBtn').classList.add('hidden');
+  $('headerTitle').textContent = 'Shadow Practice';
+  showView('libraryView');
+  renderLibrary();
+}
+$('backToLibraryBtn').addEventListener('click', goLibrary);
+window.addEventListener('popstate', () => { if (currentView() !== 'libraryView') showLibraryUI(); });
+
+// ============================================================
+// Extras: lock-screen / headset controls, keyboard shortcuts, keep-screen-awake
+// ============================================================
+function syncMediaSession() {
+  if (!('mediaSession' in navigator) || !currentSession || typeof MediaMetadata === 'undefined') return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: currentChunk().text.slice(0, 90), artist: currentSession.title, album: 'Shadow Practice' });
+    navigator.mediaSession.playbackState = playState === 'playing' ? 'playing' : 'paused';
+  } catch (e) { /* ignore */ }
+}
+if ('mediaSession' in navigator) {
+  const on = (action, fn) => { try { navigator.mediaSession.setActionHandler(action, () => { if (currentSession && currentView() === 'practiceView') fn(); }); } catch (e) { /* unsupported action */ } };
+  on('play', togglePlayPause); on('pause', () => { if (playState === 'playing') pausePlayback(); });
+  on('previoustrack', goPrev); on('nexttrack', goNext);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (currentView() !== 'practiceView' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const tag = e.target && e.target.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if (e.code === 'Space') { if (e.target.closest && e.target.closest('button')) return; e.preventDefault(); togglePlayPause(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+  else if (e.key === 'r' || e.key === 'R') { startChunkFromBeginning(); }
+});
+
+let wakeLock = null;
+async function requestWake() {
+  try {
+    if (!('wakeLock' in navigator) || document.hidden || wakeLock) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) { wakeLock = null; }
+}
+function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) { /* ignore */ } wakeLock = null; }
+
+// ============================================================
+// Optional voice recording
+//
+// Opt-in only: the microphone is never touched until Record is tapped, so
+// practice is byte-for-byte the same if you never use it. A take is saved
+// per (session, chunk), survives closing the app, and is never lost by
+// navigating away mid-take.
+// ============================================================
+const RECORDING_SUPPORTED = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+const MAX_TAKE_SEC = 120;
+let rec = null;                    // the active recording, or null
+let recRenderToken = 0;
+let recPlaybackUrl = null;
+
+function recordingKey() { return `${currentSession.session_id}::${currentChunk().id}`; }
+function pickMimeType() {
+  for (const t of ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg']) {
+    try { if (MediaRecorder.isTypeSupported(t)) return t; } catch (e) { /* ignore */ }
+  }
+  return '';
+}
+function micErrorMessage(err) {
+  const n = err && err.name;
+  if (n === 'NotAllowedError' || n === 'SecurityError') return "Microphone access is blocked. Allow it in this site's permissions to record. Practice works without it.";
+  if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No microphone was found on this device.';
+  if (n === 'NotReadableError') return 'The microphone is being used by another app.';
+  return `Couldn't start recording (${err && err.message ? err.message : 'unknown error'}).`;
+}
+
+async function refreshRecordingUI() {
+  const token = ++recRenderToken;
+  const controls = $('rpControls');
+  if (!RECORDING_SUPPORTED) { controls.classList.add('hidden'); $('rpUnsupported').classList.remove('hidden'); return; }
+  if (rec) {
+    renderRecordingControls(controls, null, true);
+    try { controls.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) { /* ignore */ }   // keep Stop visible on small screens
+    return;
+  }
+  let existing = null;
+  try { existing = await idbGet('recordings', recordingKey()); } catch (e) { /* treat as none */ }
+  if (token !== recRenderToken) return;                                    // a newer render superseded this one
+  renderRecordingControls(controls, existing, false);
+}
+
+function renderRecordingControls(controls, existing, isRec) {
+  controls.innerHTML = '';
+  if (isRec) {
+    const stop = document.createElement('button');
+    stop.className = 'rp-btn recording'; stop.id = 'recStopBtn'; stop.type = 'button';
+    stop.innerHTML = `${icon('stop', 18)}<span>Stop \u00b7 0:00</span>`;
+    stop.addEventListener('click', () => stopRecordingIfActive(false));
+    controls.appendChild(stop);
+    return;
+  }
+  const recordBtn = document.createElement('button');
+  recordBtn.className = 'rp-btn'; recordBtn.type = 'button';
+  recordBtn.innerHTML = `${icon('mic', 18)}<span>${existing ? 'Re-record' : 'Record my voice'}</span>`;
+  recordBtn.addEventListener('click', beginRecording);
+  controls.appendChild(recordBtn);
+  if (!existing) return;
+
+  const playBtn = document.createElement('button');
+  playBtn.className = 'rp-icon'; playBtn.type = 'button'; playBtn.id = 'recPlayBtn';
+  const paint = () => { playBtn.innerHTML = icon(recordingAudioEl.paused ? 'play' : 'pause', 20); playBtn.setAttribute('aria-label', recordingAudioEl.paused ? 'Play your recording' : 'Pause your recording'); };
+  paint();
+  playBtn.addEventListener('click', () => {
+    if (!recordingAudioEl.paused) { recordingAudioEl.pause(); return; }
+    if (playState === 'playing') pausePlayback();
+    if (recPlaybackUrl) URL.revokeObjectURL(recPlaybackUrl);
+    recPlaybackUrl = URL.createObjectURL(existing.blob);
+    recordingAudioEl.src = recPlaybackUrl;
+    recordingAudioEl.play().catch(() => showPlaybackStatus("Couldn't play that recording.", true));
+  });
+  controls.appendChild(playBtn);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'rp-icon'; delBtn.type = 'button'; delBtn.innerHTML = icon('trash', 20);
+  delBtn.setAttribute('aria-label', 'Delete your recording');
+  delBtn.addEventListener('click', async () => {
+    if (!confirm('Delete your recording of this chunk?')) return;
+    recordingAudioEl.pause();
+    try { await idbDelete('recordings', recordingKey()); } catch (e) { toast("Couldn't delete the recording.", true); }
+    refreshRecordingUI();
+  });
+  controls.appendChild(delBtn);
+}
+['play', 'pause', 'ended'].forEach((ev) => recordingAudioEl.addEventListener(ev, () => {
+  const b = $('recPlayBtn'); if (b) { b.innerHTML = icon(recordingAudioEl.paused ? 'play' : 'pause', 20); b.setAttribute('aria-label', recordingAudioEl.paused ? 'Play your recording' : 'Pause your recording'); }
+}));
+
+async function beginRecording() {
+  if (rec) return;
+  if (playState === 'playing') pausePlayback();                            // don't record the original leaking into the mic
+  recordingAudioEl.pause();
+  showPlaybackStatus('');
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch (err) { showPlaybackStatus(micErrorMessage(err), true); return; }
+
+  const mime = pickMimeType();
+  let recorder;
+  try { recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
+  catch (err) { stream.getTracks().forEach((t) => t.stop()); showPlaybackStatus(micErrorMessage(err), true); return; }
+
+  const r = { recorder, stream, parts: [], key: recordingKey(), sessionId: currentSession.session_id, chunkId: currentChunk().id, startedAt: Date.now(), timerId: null };
+  rec = r;
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) r.parts.push(e.data); };
+  recorder.onstop = async () => {
+    clearInterval(r.timerId);
+    r.stream.getTracks().forEach((t) => t.stop());
+    if (rec === r) rec = null;
+    if (r.parts.length) {
+      try {
+        const blob = new Blob(r.parts, { type: recorder.mimeType || mime || 'audio/webm' });
+        await idbPut('recordings', { key: r.key, session_id: r.sessionId, chunk_id: r.chunkId, blob, recordedAt: Date.now() });
+        toast('Recording saved');
+      } catch (e) { showPlaybackStatus("Couldn't save the recording (storage may be full).", true); }
+    }
+    refreshRecordingUI();
+  };
+  const track = stream.getAudioTracks()[0];
+  if (track) track.onended = () => stopRecordingIfActive(false);           // mic unplugged / revoked mid-take
+  recorder.start(1000);
+  r.timerId = setInterval(() => {
+    const s = Math.floor((Date.now() - r.startedAt) / 1000);
+    const label = document.querySelector('#recStopBtn span'); if (label) label.textContent = `Stop \u00b7 ${fmtClock(s)}`;
+    if (s >= MAX_TAKE_SEC) stopRecordingIfActive(false);
+  }, 250);
+  refreshRecordingUI();
+}
+
+function stopRecordingIfActive() {
+  if (rec && rec.recorder.state !== 'inactive') { try { rec.recorder.stop(); } catch (e) { /* already stopping */ } }
+}
+
+// ============================================================
+// Boot
+// ============================================================
+(async function boot() {
+  $('prevBtn').innerHTML = icon('prev', 26);
+  $('restartIcon').innerHTML = icon('replay', 16);
+  updateTransportUI();
+  const savedRate = lsGet('shadow.speed');
+  if (savedRate) {
+    const btn = document.querySelector(`#speedSegmented button[data-rate="${savedRate}"]`);
+    if (btn) { document.querySelectorAll('#speedSegmented button').forEach((b) => b.classList.remove('active')); btn.classList.add('active'); }
+  }
+  history.replaceState({ view: 'library' }, '');
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* ignore */ }
+  renderLibrary();
+
+  // Optional offline add-on: if a sibling sw.js is deployed, register it. The app works fully without it.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
